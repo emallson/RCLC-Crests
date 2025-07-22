@@ -156,6 +156,7 @@ local function matchesRedundancySlot(left, right)
     return matchesRedundancySlot_(left, right) or matchesRedundancySlot_(right, left)
 end
 
+-- TODO: should redo this to do one scan and one message to the channel, though i suppose could also argue that any autopassers shouldn't get requested
 local function listSlotItems(redundancySlotId)
     local result = {}
 
