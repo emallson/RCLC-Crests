@@ -4,7 +4,6 @@ local module = rclc:NewModule('RCLC Crests', 'AceComm-3.0', 'AceSerializer-3.0')
 
 local coreVotingFrame = rclc:GetModule('RCVotingFrame')
 local votingFrame = module:NewModule('RCLC Crests - Voting Frame', 'AceTimer-3.0', 'AceEvent-3.0')
-local AceGUI = LibStub("AceGUI-3.0")
 
 local session = nil
 local PLAYER_SLOT_CACHE = {}
@@ -26,6 +25,8 @@ local function trackFromTokenBonusId(item)
     elseif string.find(item, ':10353:') then
         return 'Veteran', 972
     end
+
+    return nil, nil
 end
 
 local TRACKS = {
@@ -214,11 +215,11 @@ local function requestPlayerSlotData(player, redundancySlotId)
         return -- already have the data
     end
 
-    local name, server = UnitFullName('player')
-    if name .. '-' .. server == targetName then
-        votingFrame:SendMessage('RCLCCrestUpdatePlayer', targetName, redundancySlotId, slotData(redundancySlotId))
-        return -- do nothing for self
-    end
+    -- local name, server = UnitFullName('player')
+    -- if name .. '-' .. server == targetName then
+    --     votingFrame:SendMessage('RCLCCrestUpdatePlayer', targetName, redundancySlotId, slotData(redundancySlotId))
+    --     return -- do nothing for self
+    -- end
 
     module:RequestSlot(redundancySlotId, targetName)
 end
@@ -292,7 +293,7 @@ local function trackUpgrade(self, frame, data, cols, row, realrow, column, fShow
                 local data = PLAYER_SLOT_CACHE[targetName][redundancySlotId]
                 slotData[redundancySlotId] = data
                 local track_, trackIlvl_ = highestTrackFromItems(data.items)
-                -- handle multi slot items by taking the worst highest upgrade level 
+                -- handle multi slot items by taking the worst highest upgrade level
                 if trackIlvl_ and (not trackIlvl or trackIlvl_ < trackIlvl) then
                     trackIlvl = trackIlvl
                     track = track_
@@ -309,7 +310,8 @@ local function trackUpgrade(self, frame, data, cols, row, realrow, column, fShow
         end
 
         if not waiting and watermarkIlvl then
-            local label = string.format('%s (|Tinterface/icons/inv_valorstone_base:0:0:2:0|t to %d)', track or 'None', watermarkIlvl)
+            local label = string.format('%s (|Tinterface/icons/inv_valorstone_base:0:0:2:0|t to %d)', track or 'None',
+                watermarkIlvl)
             frame.text:SetText(label)
         end
 
@@ -357,7 +359,7 @@ local function trackUpgrade(self, frame, data, cols, row, realrow, column, fShow
                             local trackName, trackIlvl = '', '-'
                             if isCurrentTierToken(item) then
                                 local trackName_, trackId = trackFromTokenBonusId(item)
-                    
+
                                 if TRACKS[trackId] then
                                     trackName = trackName_
                                     trackIlvl = TRACKS[trackId]
@@ -408,22 +410,55 @@ function votingFrame:OnInitialize()
     self:RegisterMessage('RCLCCrestUpdatePlayer', 'OnSlotDataReceived')
 end
 
-function module:OnCommReceived(message, distribution, sender)
-    local data = module:Deserialize(message)
-    if data and data.version == MSG_FORMAT_VERSION then
+local REQUEST_SEMAPHORE = {}
+
+function module:OnCommReceived(prefix, message, distribution, sender)
+    local success, data = module:Deserialize(message)
+    if success and data and data.version == MSG_FORMAT_VERSION then
+        if data.type == 'request-slot' then
+            REQUEST_SEMAPHORE[message] = (REQUEST_SEMAPHORE[message] or 0) + 1
+
+            C_Timer.After(0.1, function()
+                REQUEST_SEMAPHORE[message] = REQUEST_SEMAPHORE[message] - 1
+                if REQUEST_SEMAPHORE[message] > 0 then
+                    return -- another request came in. respond later
+                end
+
+                local reply = {
+                    redundancySlotId = data.redundancySlotId,
+                    slotData = slotData(data.redundancySlotId),
+                    version = MSG_FORMAT_VERSION,
+                    player = string.join("-", UnitFullName('player')),
+                    type = 'request-slot-reply'
+                }
+    
+                module:SendCommMessage('RCLCCrests', self:Serialize(reply), 'RAID')
+            end)
+        elseif data.type == 'request-slot-reply' then
+            votingFrame:SendMessage('RCLCCrestUpdatePlayer', data.player, data.redundancySlotId, data.slotData)
+        end
     end
 end
 
 module:RegisterComm('RCLCCrests')
 
+local PENDING_REQUESTS = {}
+
 function module:RequestSlot(redundancySlotId, characterSlug)
-    -- docs say that WHISPER only works on connected realms, with no mention of cross-realm groups. sticking to RAID
-    module:SendCommMessage('RCLCCrests', self:Serialize({
+    local msg = self:Serialize({
         version = MSG_FORMAT_VERSION,
         type = 'request-slot',
         redundancySlotId = redundancySlotId,
         characterSlug = characterSlug
-    }), 'RAID')
+    })
+
+    if PENDING_REQUESTS[msg] and time() - PENDING_REQUESTS[msg] < 3 then
+        return -- don't request more often than once per 3s
+    end
+
+    -- docs say that WHISPER only works on connected realms, with no mention of cross-realm groups. sticking to RAID
+    module:SendCommMessage('RCLCCrests', msg, 'RAID')
+    PENDING_REQUESTS[msg] = time()
 end
 
 function votingFrame:OnSlotDataReceived(msg, targetName, redundancySlotId, data)
@@ -431,4 +466,5 @@ function votingFrame:OnSlotDataReceived(msg, targetName, redundancySlotId, data)
         PLAYER_SLOT_CACHE[targetName] = {}
     end
     PLAYER_SLOT_CACHE[targetName][redundancySlotId] = data
+    coreVotingFrame:Update()
 end
