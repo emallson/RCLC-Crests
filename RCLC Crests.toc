@@ -20,3 +20,6 @@
 ## Category-zhTW: 戰利品
 
 core.lua
+items.lua
+comms.lua
+bags.lua
