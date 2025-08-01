@@ -114,6 +114,21 @@ function private.tierTokenRedundancySlots(itemLink)
     return {}
 end
 
+---get the redundancy slot id(s) for the item. this may return multiple (e.g. for omnitokens)
+---@param itemLink string
+---@return number[]
+function private.redundancySlots(item)
+    local redundancySlotId = C_ItemUpgrade.GetHighWatermarkSlotForItem(item)
+    local slots
+    if redundancySlotId == -1 then
+        slots = private.tierTokenRedundancySlots(item)
+    else
+        slots = { redundancySlotId }
+    end
+
+    return slots
+end
+
 ---check if the item link is a current-tier token
 ---@param itemLink string
 ---@return boolean

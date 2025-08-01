@@ -24,6 +24,8 @@ function votingFrame:OnMessageReceived(msg, ...)
     if msg == "RCSessionChangedPre" then
         local s = unpack({ ... })
         session = s
+    elseif msg == "RCLootTableAdditionsReceived" then
+        session = nil
         private.resetSlotCache()
     end
 end
@@ -58,17 +60,12 @@ local function trackUpgrade(self, frame, data, cols, row, realrow, column, fShow
     if loot and session ~= nil and loot[session] then
         local player = data[realrow].name
         local item = loot[session].link
-        local redundancySlotId = C_ItemUpgrade.GetHighWatermarkSlotForItem(item)
-        local slots
-        if redundancySlotId == -1 then
-            slots = private.tierTokenRedundancySlots(item)
-        else
-            slots = { redundancySlotId }
-        end
 
         local targetName = Ambiguate(player, 'mail')
         local slotData = {}
         local tooltipEnabled = false
+
+        local slots = private.redundancySlots(item)
 
         local track, trackIlvl, watermarkIlvl, waiting = nil, nil, nil, false
         for _, redundancySlotId in pairs(slots) do
@@ -187,6 +184,69 @@ local function trackUpgrade(self, frame, data, cols, row, realrow, column, fShow
     end
 end
 
+function votingFrame:sortTrackUpgrade(rowa, rowb, sortbycol)
+    local column = self.cols[sortbycol]
+    local namea, nameb = self:GetRow(rowa).name, self:GetRow(rowb).name
+    local loot = rclc:GetLootTable()
+
+    local link = loot[session] and loot[session].string
+    local slots = private.redundancySlots(link)
+
+    local trackAIlvl, watermarkA, trackBIlvl, watermarkB
+
+    for _, slot in ipairs(slots) do
+        local dataA = private.getCachedSlotData(namea, slot)
+
+        if dataA then
+            local track_, trackIlvl_ = private.highestTrackFromItems(dataA.items)
+            -- handle multi slot items by taking the worst highest upgrade level
+            if trackIlvl_ and (not trackAIlvl or trackIlvl_ < trackAIlvl) then
+                trackAIlvl = trackIlvl_
+            end
+            if dataA.highWatermark and (not watermarkA or watermarkA > dataA.highWatermark) then
+                watermarkA = dataA.highWatermark
+            end
+        end
+
+        local dataB = private.getCachedSlotData(nameb, slot)
+        if dataB then
+            local track_, trackIlvl_ = private.highestTrackFromItems(dataB.items)
+            -- handle multi slot items by taking the worst highest upgrade level
+            if trackIlvl_ and (not trackBIlvl or trackIlvl_ < trackBIlvl) then
+                trackBIlvl = trackIlvl_
+            end
+            if dataB.highWatermark and (not watermarkB or watermarkB > dataB.highWatermark) then
+                watermarkB = dataB.highWatermark
+            end
+        end
+    end
+
+    local direction = column.sort or column.defaultsort or 1
+    local asc = direction == 1 -- not sure which is ascending yet
+
+    if trackAIlvl == nil and trackBIlvl ~= nil then
+        return asc
+    end
+
+    if trackAIlvl ~= nil and trackBIlvl == nil then
+        return not asc
+    end
+
+    if trackAIlvl == trackBIlvl then
+        if asc then
+            return (watermarkA or 0) < (watermarkB or 0)
+        else
+            return (watermarkA or 0) > (watermarkB or 0)
+        end
+    end
+
+    if asc then
+        return trackAIlvl < trackBIlvl
+    else
+        return trackBIlvl < trackAIlvl
+    end
+end
+
 function votingFrame:OnInitialize()
     -- parts of this are cribbed from the wowaudit plugin
     if not coreVotingFrame.scrollCols then -- RCVotingFrame hasn't been initialized.
@@ -197,10 +257,13 @@ function votingFrame:OnInitialize()
         name = 'Highest Upgrade Track',
         DoCellUpdate = trackUpgrade,
         colName = 'crests-upgrade',
+        compareSort = votingFrame.sortTrackUpgrade,
         width = 150,
     })
 
     self:RegisterMessage("RCSessionChangedPre", "OnMessageReceived")
+    self:RegisterMessage("RCLootTableAdditionsReceived", "OnMessageReceived")
+
     self:RegisterMessage('RCLCCrestUpdatePlayer', 'OnSlotDataReceived')
 end
 

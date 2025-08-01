@@ -34,6 +34,10 @@ local PENDING_REQUESTS = {}
 
 local MSG_FORMAT_VERSION = 2
 
+local function isDebug()
+    return string.join('-', UnitFullName('player')) == 'Eisenpelz-Area52'
+end
+
 local function RequestSlot(redundancySlotId, characterSlug)
     local msg = private.module:Serialize({
         version = MSG_FORMAT_VERSION,
@@ -42,8 +46,12 @@ local function RequestSlot(redundancySlotId, characterSlug)
         characterSlug = characterSlug
     })
 
-    if PENDING_REQUESTS[msg] and time() - PENDING_REQUESTS[msg] < 3 then
-        return -- don't request more often than once per 3s
+    if PENDING_REQUESTS[msg] and time() - PENDING_REQUESTS[msg] < 10 then
+        return -- don't request more often than once per 10s
+    end
+
+    if isDebug() then
+        print('requesting slot ' .. redundancySlotId .. ' from ' .. characterSlug)
     end
 
     -- always using addon comms to help simplify testing
