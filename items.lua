@@ -23,13 +23,13 @@ end
 
 private.TRACKS = {
     -- Myth
-    [978] = 684,
+    [978] = 723,
     -- Hero
-    [974] = 671,
+    [974] = 710,
     -- Champ
-    [973] = 658,
+    [973] = 704,
     -- Veteran
-    [972] = 645,
+    [972] = 691,
 }
 
 local TRACK_DISPLAY_QUALITY = {
@@ -55,7 +55,7 @@ local function isCurrentTrack(upgradeInfo)
 end
 
 -- bonus id for current season crafted items
-local CURRENT_CRAFT_BONUS = 12040
+local CURRENT_CRAFT_BONUS = 12050
 
 ---check if the item link represents a current-tier spark craft
 ---@param itemLink string
@@ -74,28 +74,28 @@ local TOKEN_SLOT_TO_REDUNDANCY_ID = {
 
 -- mostly copied from RCLC, with the addition of the omni token
 local CURRENT_TIER_TOKENS = {
-    [228799] = "ChestSlot",    -- Dreadful Greased Gallybux,
-    [228800] = "ChestSlot",    -- Mystic Greased Gallybux,
-    [228801] = "ChestSlot",    -- Venerated Greased Gallybux,
-    [228802] = "ChestSlot",    -- Zenith Greased Gallybux,
-    [228803] = "HandsSlot",    -- Dreadful Bloody Gallybux,
-    [228804] = "HandsSlot",    -- Mystic Bloody Gallybux,
-    [228805] = "HandsSlot",    -- Venerated Bloody Gallybux,
-    [228806] = "HandsSlot",    -- Zenith Bloody Gallybux,
-    [228807] = "HeadSlot",     -- Dreadful Gilded Gallybux,
-    [228808] = "HeadSlot",     -- Mystic Gilded Gallybux,
-    [228809] = "HeadSlot",     -- Venerated Gilded Gallybux,
-    [228810] = "HeadSlot",     -- Zenith Gilded Gallybux,
-    [228811] = "LegsSlot",     -- Dreadful Rusty Gallybux,
-    [228812] = "LegsSlot",     -- Mystic Rusty Gallybux,
-    [228813] = "LegsSlot",     -- Venerated Rusty Gallybux,
-    [228814] = "LegsSlot",     -- Zenith Rusty Gallybux,
-    [228815] = "ShoulderSlot", -- Dreadful Polished Gallybux,
-    [228816] = "ShoulderSlot", -- Mystic Polished Gallybux,
-    [228817] = "ShoulderSlot", -- Venerated Polished Gallybux,
-    [228818] = "ShoulderSlot", -- Zenith Polished Gallybux,
+	[237581] = "ChestSlot", -- Dreadful Voidglass Contaminant,
+	[237582] = "ChestSlot", -- Mystic Voidglass Contaminant,
+	[237583] = "ChestSlot", -- Venerated Voidglass Contaminant,
+	[237584] = "ChestSlot", -- Zenith Voidglass Contaminant,
+	[237585] = "HandsSlot", -- Dreadful Binding Agent,
+	[237586] = "HandsSlot", -- Mystic Binding Agent,
+	[237587] = "HandsSlot", -- Venerated Binding Agent,
+	[237588] = "HandsSlot", -- Zenith Binding Agent,
+	[237589] = "HeadSlot",  -- Dreadful Foreboding Beaker,
+	[237590] = "HeadSlot",  -- Mystic Foreboding Beaker,
+	[237591] = "HeadSlot",  -- Venerated Foreboding Beaker,
+	[237592] = "HeadSlot",  -- Zenith Foreboding Beaker,
+	[237593] = "LegsSlot",  -- Dreadful Silken Offering,
+	[237594] = "LegsSlot",  -- Mystic Silken Offering,
+	[237595] = "LegsSlot",  -- Venerated Silken Offering,
+	[237596] = "LegsSlot",  -- Zenith Silken Offering,
+	[237597] = "ShoulderSlot", -- Dreadful Yearning Cursemark,
+	[237598] = "ShoulderSlot", -- Mystic Yearning Cursemark,
+	[237599] = "ShoulderSlot", -- Venerated Yearning Cursemark,
+	[237600] = "ShoulderSlot", -- Zenith Yearning Cursemark,
 
-    [228819] = "MultiSlots"
+    [237602] = "MultiSlots"
 }
 
 ---get the redundancy slot id(s) for the item. this may return multiple (e.g. for omnitokens)

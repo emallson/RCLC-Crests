@@ -180,6 +180,8 @@ local function trackUpgrade(self, frame, data, cols, row, realrow, column, fShow
             frame:SetScript('OnLeave', function()
                 tipFrame:Hide()
             end)
+        else
+            frame:SetScript('OnEnter', function() tipFrame:Hide() end)
         end
     end
 end
@@ -221,6 +223,10 @@ function votingFrame:sortTrackUpgrade(rowa, rowb, sortbycol)
         end
     end
 
+    if trackAIlvl == nil and trackBIlvl == nil then
+        return namea < nameb
+    end
+
     local direction = column.sort or column.defaultsort or 1
     local asc = direction == 1 -- not sure which is ascending yet
 
@@ -251,6 +257,14 @@ function votingFrame:OnInitialize()
     -- parts of this are cribbed from the wowaudit plugin
     if not coreVotingFrame.scrollCols then -- RCVotingFrame hasn't been initialized.
         return self:ScheduleTimer("OnInitialize", 0.5)
+    end
+    
+    -- Translate sortnext into colNames (copied from RCLootCouncil_ExtraUtilities)
+    self.sortnext = {}
+    for _, v in ipairs(coreVotingFrame.scrollCols) do
+        if v.sortnext then
+            self.sortnext[v.colName] = coreVotingFrame.scrollCols[v.sortnext].colName
+        end
     end
 
     table.insert(coreVotingFrame.scrollCols, 8, {
