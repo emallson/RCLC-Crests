@@ -1,11 +1,12 @@
 ## Author: emallson
-## Interface: 110107
+## Interface: 110200
 ## Notes: Add information to RCLootCouncil about the Crest Upgrade System
 ## Title: RCLC Crests
 ## Dependencies: RCLootCouncil
 ## OptionalDeps: LibStub
 ## AllowLoadGameType: standard
-## Version: 0.0.0-dev
+## Version: @project-version@
+## X-Curse-Project-ID: 1322855
 ## Group: RCLootCouncil
 ## Category-enUS: Loot
 ## Category-deDE: Beute
